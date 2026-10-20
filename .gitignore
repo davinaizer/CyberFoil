@@ -24,3 +24,5 @@ __pycache__/
 container/.cache/
 build-cc.json
 build-analysis/
+dist/
+!container/*.sh
