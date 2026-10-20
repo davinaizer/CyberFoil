@@ -1,0 +1,6 @@
+FROM docker.io/devkitpro/devkita64:latest
+RUN dkp-pacman -S --noconfirm --needed switch-ntfs-3g switch-lwext4 \
+ && apt-get update -qq && apt-get install -y -qq --no-install-recommends git clang clang-tidy cppcheck python3-pil bear \
+ && rm -rf /var/lib/apt/lists/*
+ENV DEVKITPRO=/opt/devkitpro DEVKITARM=/opt/devkitpro/devkitARM DEVKITPPC=/opt/devkitpro/devkitPPC
+WORKDIR /src

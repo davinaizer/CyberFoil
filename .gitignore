@@ -21,3 +21,6 @@ __pycache__/
 *.sh
 *.bat
 *.a
+container/.cache/
+build-cc.json
+build-analysis/
