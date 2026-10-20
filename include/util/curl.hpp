@@ -5,6 +5,10 @@
 
 namespace inst::curl {
     using DownloadProgressCallback = std::function<void(std::uint64_t downloaded, std::uint64_t total)>;
+    // Safe to call from any thread; runs curl_global_init exactly once.
+    bool ensureGlobalInit();
+    // Disable curl's signal-based timeouts (not thread-safe). Takes a CURL*.
+    void applyThreadSafeDefaults(void* curlHandle);
     const std::string& getDefaultUserAgent();
     const std::string& getDownloadUserAgent();
     const std::string& getUserAgent();

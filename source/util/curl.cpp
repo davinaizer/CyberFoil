@@ -195,12 +195,7 @@ static constexpr long kFileDownloadCurlBufferSize = 512L * 1024L;
 static constexpr std::size_t kFileDownloadIoBufferSize = 1024U * 1024U;
 
 static bool ensureCurlGlobalInit() {
-    static std::once_flag initFlag;
-    static bool initOk = false;
-    std::call_once(initFlag, []() {
-        initOk = (curl_global_init(CURL_GLOBAL_ALL) == CURLE_OK);
-    });
-    return initOk;
+    return inst::curl::ensureGlobalInit();
 }
 
 static void removeFileIfExistsNoThrow(const char* path) {
@@ -245,6 +240,20 @@ static void applyBufferedFileIo(FILE* file) {
 }
 
 namespace inst::curl {
+    bool ensureGlobalInit() {
+        static std::once_flag initFlag;
+        static bool initOk = false;
+        std::call_once(initFlag, []() {
+            initOk = (curl_global_init(CURL_GLOBAL_ALL) == CURLE_OK);
+        });
+        return initOk;
+    }
+
+    void applyThreadSafeDefaults(void* curlHandle) {
+        if (curlHandle != nullptr)
+            curl_easy_setopt(static_cast<CURL*>(curlHandle), CURLOPT_NOSIGNAL, 1L);
+    }
+
     bool downloadFile (const std::string ourUrl, const char *pagefilename, long timeout, bool writeProgress) {
         if (!ensureCurlGlobalInit()) {
             LOG_DEBUG("curl global init failed\n");

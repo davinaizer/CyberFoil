@@ -1483,6 +1483,7 @@ namespace remoteInstStuff {
                 return result;
             }
 
+            inst::curl::applyThreadSafeDefaults(curl);
             curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
             curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
             curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
@@ -1556,7 +1557,12 @@ namespace remoteInstStuff {
                 return result;
 
             lastResult = result;
-            std::this_thread::sleep_for(std::chrono::milliseconds(RemoteRetryDelayMs(attempt)));
+            // Sleep in slices so a cancel request is not stuck behind the backoff.
+            for (std::uint32_t slept = 0, total = RemoteRetryDelayMs(attempt); slept < total; slept += 100) {
+                if (inst::ui::instPage::isInstallCancelRequested())
+                    return lastResult;
+                std::this_thread::sleep_for(std::chrono::milliseconds(std::min<std::uint32_t>(100, total - slept)));
+            }
         }
 
         return lastResult;
@@ -2324,6 +2330,7 @@ namespace remoteInstStuff {
         auto addField = [&](const char* name, const std::string& value) { curl_mimepart* part = curl_mime_addpart(mime); curl_mime_name(part, name); curl_mime_data(part, value.data(), value.size()); };
         addField("title_id", titleId); addField("build_id", buildId); addField("content", text);
         if (!note.empty()) addField("note", note);
+        inst::curl::applyThreadSafeDefaults(curl);
         curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
         curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
         curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);

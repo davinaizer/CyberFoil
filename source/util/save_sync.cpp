@@ -717,7 +717,7 @@ namespace {
         error.clear();
         outCode = 0;
 
-        if (curl_global_init(CURL_GLOBAL_ALL) != CURLE_OK) {
+        if (!inst::curl::ensureGlobalInit()) {
             error = "Failed to initialize HTTP client.";
             return false;
         }
@@ -728,6 +728,7 @@ namespace {
             return false;
         }
 
+        inst::curl::applyThreadSafeDefaults(curl);
         curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
         curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
         curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
@@ -784,7 +785,7 @@ namespace {
         error.clear();
         outCode = 0;
 
-        if (curl_global_init(CURL_GLOBAL_ALL) != CURLE_OK) {
+        if (!inst::curl::ensureGlobalInit()) {
             error = "Failed to initialize HTTP client.";
             return false;
         }
@@ -795,6 +796,7 @@ namespace {
             return false;
         }
 
+        inst::curl::applyThreadSafeDefaults(curl);
         curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
         curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "DELETE");
         curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
@@ -837,7 +839,7 @@ namespace {
     bool HttpDownloadFileWithAuthAndProgress(const std::string& url, const std::string& outputPath, const std::string& user, const std::string& pass, long timeoutMs, std::string& error)
     {
         error.clear();
-        if (curl_global_init(CURL_GLOBAL_ALL) != CURLE_OK) {
+        if (!inst::curl::ensureGlobalInit()) {
             error = "Failed to initialize HTTP client.";
             return false;
         }
@@ -856,6 +858,7 @@ namespace {
         }
 
         UiProgressThrottle throttle{};
+        inst::curl::applyThreadSafeDefaults(curl);
         curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
         curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
         curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
@@ -1019,7 +1022,7 @@ namespace {
     bool UploadZipMultipart(const std::string& url, const std::string& zipPath, const std::string& user, const std::string& pass, std::uint64_t titleId, const std::string& note, std::string& error)
     {
         error.clear();
-        if (curl_global_init(CURL_GLOBAL_ALL) != CURLE_OK) {
+        if (!inst::curl::ensureGlobalInit()) {
             error = "Failed to initialize HTTP client.";
             return false;
         }
@@ -1033,6 +1036,7 @@ namespace {
         UiProgressThrottle throttle{};
         std::string responseBody;
         const std::string titleIdText = FormatTitleIdHex(titleId);
+        inst::curl::applyThreadSafeDefaults(curl);
         curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
         curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
         curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);

@@ -56,12 +56,7 @@ static int m_clientSocket = 0;
 namespace {
     bool EnsureCurlInitialized()
     {
-        static std::once_flag flag;
-        static bool ok = false;
-        std::call_once(flag, []() {
-            ok = (curl_global_init(CURL_GLOBAL_ALL) == CURLE_OK);
-        });
-        return ok;
+        return inst::curl::ensureGlobalInit();
     }
 }
 

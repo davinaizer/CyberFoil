@@ -115,6 +115,7 @@ namespace inst::util {
         primeNavigationClickAudio();
 
         socketInitializeDefault();
+        inst::curl::ensureGlobalInit();
         #ifdef __DEBUG__
             nxlinkStdio();
         #endif
@@ -124,6 +125,7 @@ namespace inst::util {
 
     void deinitApp () {
         nx::hdd::exit();
+        curl_global_cleanup();
         socketExit();
         awoo_usbCommsExit();
     }
@@ -403,7 +405,6 @@ namespace inst::util {
         Mix_Chunk *sound = NULL;
         sound = Mix_LoadWAV(audioPath.c_str());
         if(sound == NULL) {
-            Mix_FreeChunk(sound);
             Mix_CloseAudio();
             return;
         }
@@ -415,7 +416,7 @@ namespace inst::util {
             return;
         }
 
-        while(Mix_Playing(channel) != 0);
+        while(Mix_Playing(channel) != 0) SDL_Delay(10);
 
         Mix_FreeChunk(sound);
         Mix_CloseAudio();

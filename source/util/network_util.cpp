@@ -195,6 +195,20 @@ namespace tin::network
             outRevision = revisionToken.substr(0, digitsEnd);
     }
 
+    // Sleep in short slices so a cancel request is honored during retry backoff.
+    // Returns true if the full delay elapsed, false if the install was canceled.
+    static bool SleepUnlessCanceled(u64 totalNs)
+    {
+        constexpr u64 kSliceNs = 100000000ULL;
+        for (u64 slept = 0; slept < totalNs; slept += kSliceNs)
+        {
+            if (inst::ui::instPage::isInstallCancelRequested())
+                return false;
+            svcSleepThread(std::min(kSliceNs, totalNs - slept));
+        }
+        return !inst::ui::instPage::isInstallCancelRequested();
+    }
+
     static std::string UrlDecode(const std::string& value)
     {
         CURL* curl = curl_easy_init();
@@ -291,6 +305,7 @@ namespace tin::network
         ss << offset << "-" << (offset + size - 1);
         const auto range = ss.str();
 
+        inst::curl::applyThreadSafeDefaults(curl);
         curl_easy_setopt(curl, CURLOPT_URL, requestUrl.c_str());
         curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, false);
         const bool legacyRequest = inst::config::remoteLegacyMode;
@@ -446,6 +461,7 @@ namespace tin::network
             THROW_FORMAT("Failed to initialize curl\n");
         }
 
+        inst::curl::applyThreadSafeDefaults(curl);
         curl_easy_setopt(curl, CURLOPT_URL, m_url.c_str());
         curl_easy_setopt(curl, CURLOPT_NOBODY, true);
         curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
@@ -625,7 +641,8 @@ namespace tin::network
                     {
                         LOG_DEBUG("StreamDataRange: retry %d/%d, resuming at offset %zu+%zu\n",
                             attempt, kMaxRetries, requestOffset, bytesReceived);
-                        svcSleepThread(kRetryDelayNs);
+                        if (!SleepUnlessCanceled(kRetryDelayNs))
+                            return 1000 + static_cast<int>(CURLE_WRITE_ERROR);
                     }
 
                     const size_t currentOffset = requestOffset + bytesReceived;
@@ -801,6 +818,7 @@ namespace tin::network
             THROW_FORMAT("Failed to initialize curl\n");
         }
 
+        inst::curl::applyThreadSafeDefaults(curl);
         curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
         curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "DROP");
         const std::string& userAgent = inst::curl::getUserAgent();
